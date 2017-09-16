@@ -6,11 +6,9 @@
 #include <string.h>
 #include <unistd.h>
 #include "PDKEEPROM.h"
+#include "ipmi_fru.h"
 
 #define TOOL_VERSION		"0.0"
-
-uint8_t verbose = 0;
-
 
 // Show Help Information Of This Tool
 void ShowHelp(char *str)
@@ -67,15 +65,6 @@ int BinStringToRawData(uint8_t *array, char *string, uint16_t *len)
         }
     }
 
-    if(verbose > 1)
-    {
-        printf("String to data: ");
-        for(i=0; i<str_len; i++)
-            printf(" %01x", data[i]);
-        printf("\n");
-        printf("array_len: %d\n", array_len);
-    }
-
     for(i=0; i<array_len/2; i++)
     {
         *array++ = (data[2*i] << 4) + data[2*i+1];
@@ -98,20 +87,14 @@ int PrintDataToChar(uint8_t dat)
     return 0;
 }
 
-static const char *optString = "f:o:s:rwd:v:V";
+static const char *optString = "f:v:V";
 
 int main(int argc, char **argv)
 {
 	char ch = 0, optEnd = -1;
 	// Default SDR file name: nsu12a.bin
 	char *fruFileName = "fru.bin";
-    char *fruDataWrite;
-
-    uint8_t Data[EEPROM_MAX_SIZE] = {0};
-
-    uint16_t offset = 0;
-    uint16_t size = 0;
-    uint8_t rwflag;
+    uint8_t verbose = 0;
 
 	opterr = 0;
 
@@ -128,21 +111,6 @@ int main(int argc, char **argv)
 			case 'f':
 				fruFileName = optarg;
 			break;
-			case 'o':
-				offset = strtol(optarg, NULL, 16);
-			break;
-			case 's':
-				size = strtol(optarg, NULL, 16);
-			break;
-			case 'r':
-				rwflag = READ_EEPROM;
-			break;
-			case 'd':
-				fruDataWrite = optarg;
-			break;
-			case 'w':
-				rwflag = WRITE_EEPROM;
-			break;
 			case 'v':
 				verbose = strtol(optarg, NULL, 10);
 			break;
@@ -157,76 +125,8 @@ int main(int argc, char **argv)
 		}
 	}
 
-    if(FRU_Check(fruFileName) == 0)
-        printf("FRU checksum ok\n");
-    else
-        printf("FRU checksum fail\n");
+    ipmi_fru_print(fruFileName, verbose);
 
-#if 0
-    if(rwflag == READ_EEPROM)
-    {
-        // ./bin/parser -f example/fru.bin -r -o 0 -s 256 -v 2
-
-        uint32_t fruFileLen;
-
-        GetFileLength(fruFileName, &fruFileLen);
-
-        if(offset + size > fruFileLen)
-        {
-            if(offset > fruFileLen)
-                size = 0;
-            else
-                size = fruFileLen - offset;
-        }
-
-        ReadWriteEEPROM(fruFileName, Data, offset, size, rwflag);
-
-        uint16_t i;
-
-        printf("Data read, size: %d\n", size);
-        for(i=0;i<offset%16;i++)
-            printf("   ");
-
-        for(i=offset;i<size+offset;i++)
-        {
-            printf(" %02x", Data[i-offset]);
-
-            if((i+1) % 8 == 0)
-                printf(" ");
-
-            if((i+1) % 16 == 0)
-                printf("\n");
-        }
-        printf("\n");
-    }
-    else
-    {
-        // ./bin/parser -f example/fru.bin -w -o 2 -d "01 06" -v 2
-
-        size = strlen(fruDataWrite);
-
-        if(verbose > 1)
-            printf("string: %s, size: %d\n", fruDataWrite, size);
-
-        BinStringToRawData(Data, fruDataWrite, &size);
-
-        if(verbose > 1)
-        {
-            printf("FRU file name: %s\n", fruFileName);
-            printf("Data: ");
-            uint16_t i;
-            for(i=0;i<size;i++)
-            {
-                printf(" %02x", Data[i]);
-            }
-            printf("\n");
-            printf("Offset: %02x\n", offset);
-            printf("Size  : %02x\n", size);
-        }
-
-        ReadWriteEEPROM(fruFileName, Data, offset, size, rwflag);
-    }
-#endif
 	return 0;
 }
 
