@@ -5,9 +5,9 @@
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
-#include "eeprom.h"
+#include "PDKEEPROM.h"
 
-#define TOOL_VERSION		"0.3"
+#define TOOL_VERSION		"0.0"
 
 uint8_t verbose = 0;
 
@@ -22,6 +22,10 @@ void ShowHelp(char *str)
 	printf("Usage: %s [OPTIONS...]\n", str);
 	printf("OPTIONS:\n");
 	printf("\t-f        Specify input FRU file\n");
+    printf("\t-o        Specify offset of FRU file\n");
+    printf("\t-s        Size to read/write FRU file\n");
+    printf("\t-r        Read FRU file\n");
+    printf("\t-w        Write FRU file\n");
 	printf("\t-v        Verbose show multiple level message\n");
 	printf("\t            0 -- Total record number\n");
 	printf("\t            1 -- Check all record ID\n");
@@ -36,14 +40,23 @@ void ShowVersion(void)
 	fprintf(stdout, "version %s\n", TOOL_VERSION);
 }
 
-static const char *optString = "f:v:n:V";
+static const char *optString = "f:o:s:rwv:V";
 
 int main(int argc, char **argv)
 {
 	char ch = 0, optEnd = -1;
 	// Default SDR file name: nsu12a.bin
 	char *fruFileName = "fru.bin";
-    unsigned long fruFileLen = 0;
+    uint32_t fruFileLen = 0;
+
+    uint8_t Data[EEPROM_MAX_SIZE] = {0};
+
+    uint16_t offset = 0;
+    uint16_t size = 0;
+    uint8_t rwflag;
+
+    uint16_t i;
+
 
 	opterr = 0;
 
@@ -60,6 +73,18 @@ int main(int argc, char **argv)
 			case 'f':
 				fruFileName = optarg;
 			break;
+			case 'o':
+				offset = strtol(optarg, NULL, 16);
+			break;
+			case 's':
+				size = strtol(optarg, NULL, 16);
+			break;
+			case 'r':
+				rwflag = READ_EEPROM;
+			break;
+			case 'w':
+				rwflag = WRITE_EEPROM;
+			break;
 			case 'v':
 				verbose = strtol(optarg, NULL, 10);
 			break;
@@ -74,10 +99,27 @@ int main(int argc, char **argv)
 		}
 	}
 
+#if 0
     GetFileLength(fruFileName, &fruFileLen);
-
     if(verbose > 1)
-        printf("%s length: 0x%lx\n", fruFileName, fruFileLen);
+        printf("%s length: 0x%x\n", fruFileName, fruFileLen);
+#else
+    if(0)
+    {
+        fruFileLen=fruFileLen;
+    }
+#endif
+#if 1
+    ReadWriteEEPROM(fruFileName, Data, offset, size, rwflag);
+
+    if(rwflag == READ_EEPROM)
+    {
+        printf("Read:  ");
+        for(i=0; i<size; i++)
+           printf(" %02x", Data[i]);
+        printf("\n");
+    }
+#endif
 
 	return 0;
 }
