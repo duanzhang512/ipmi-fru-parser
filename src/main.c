@@ -157,6 +157,12 @@ int main(int argc, char **argv)
 		}
 	}
 
+    if(FRU_Check(fruFileName) == 0)
+        printf("FRU checksum ok\n");
+    else
+        printf("FRU checksum fail\n");
+
+#if 0
     if(rwflag == READ_EEPROM)
     {
         // ./bin/parser -f example/fru.bin -r -o 0 -s 256 -v 2
@@ -220,7 +226,7 @@ int main(int argc, char **argv)
 
         ReadWriteEEPROM(fruFileName, Data, offset, size, rwflag);
     }
-
+#endif
 	return 0;
 }
 

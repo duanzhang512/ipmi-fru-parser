@@ -4,6 +4,7 @@
 #include <inttypes.h>
 
 
+extern int FRU_Check(char *fruFileName);
 
 #endif
 

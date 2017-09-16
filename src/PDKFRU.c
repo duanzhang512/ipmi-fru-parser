@@ -6,46 +6,22 @@
 #include "PDKFRU.h"
 #include "PDKEEPROM.h"
 
-#if 0
-/*-----------------------------------------------------
- * GetFRUInfo
- *----------------------------------------------------*/
-static int GetFRUAreaInfo (uint8_t DeviceID)
+int FRU_Check(char *fruFileName)
 {
-    if(0)
+    uint8_t i;
+    uint8_t Data[8];
+    uint8_t checksum = 0;
+
+    ReadWriteEEPROM(fruFileName, Data, 0, 8, READ_EEPROM);
+
+    for(i=0; i<8; i++)
     {
-        DeviceID=DeviceID;
+        checksum += Data[i];
     }
 
-    return 0;
+    if(checksum == 0)
+        return 0;
+    else
+        return -1;
 }
-
-static int ReadFRUDevice (char * fruFileName, uint16_t Offset, uint8_t Len, uint8_t* pData)
-{
-
-    if(0)
-    {
-        fruFileName=fruFileName;
-        Offset=Offset;
-        Len=Len;
-        pData=pData;
-    }
-
-    return 0;
-}
-
-static int WriteFRUDevice (char * fruFileName, uint16_t Offset, uint8_t Len, uint8_t* pData)
-{
-    if(0)
-    {
-        fruFileName=fruFileName;
-        Offset=Offset;
-        Len=Len;
-        pData=pData;
-    }
-
-    return 0;
-}
-
-#endif
 
