@@ -30,44 +30,48 @@ int ReadWriteEEPROM(char* EEPROMFileName, uint8_t* pData, uint16_t Offset, uint1
     FILE* pFile;
     uint32_t    EEPROMFileSize = 0;
 
-    GetFileLength(EEPROMFileName, &EEPROMFileSize);
-
-    if(Offset > EEPROMFileSize)
-    {
-        return -1;
-    }
-    else if(Offset + Size > EEPROMFileSize)
-    {
-        Size = EEPROMFileSize - Offset;
-    }
-
     if( RWFlag == WRITE_EEPROM )
     {
-    	pFile = fopen(EEPROMFileName, "wb");
+    	pFile = fopen(EEPROMFileName, "rb+");
+
         if(pFile == NULL)
         {
             perror("Error opening file");
             return -1;
         }
 
-        fseek(pFile, Offset, SEEK_SET);
+        if(-1 == fseek(pFile, Offset, SEEK_SET))
+            printf("seek error\n");
 
-        fwrite(pData, 1, Size, pFile);
+        fwrite(pData, sizeof(uint8_t), Size, pFile);
 
         fclose(pFile);
     }
     else
     {
+        GetFileLength(EEPROMFileName, &EEPROMFileSize);
+
+        if(Offset > EEPROMFileSize)
+        {
+            return -1;
+        }
+        else if(Offset + Size > EEPROMFileSize)
+        {
+            Size = EEPROMFileSize - Offset;
+        }
+
     	pFile = fopen(EEPROMFileName, "rb");
+
         if(pFile == NULL)
         {
             perror("Error opening file");
             return -1;
         }
 
-        fseek(pFile, Offset, SEEK_SET);
+        if(-1 == fseek(pFile, Offset, SEEK_SET))
+            printf("seek error\n");
 
-        fread(pData, 1, Size, pFile);
+        fread(pData, sizeof(uint8_t), Size, pFile);
 
         fclose(pFile);
     }
