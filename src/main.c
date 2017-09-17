@@ -8,23 +8,18 @@
 #include "PDKEEPROM.h"
 #include "ipmi_fru.h"
 
-#define TOOL_VERSION		"0.0"
+#define TOOL_VERSION		"0.1"
 
 // Show Help Information Of This Tool
 void ShowHelp(char *str)
 {
 	printf("*************************************************************\n");
 	fprintf(stdout, "*                SDR PARSER TOOL V%s                       *\n", TOOL_VERSION);
-	printf("*                   Fred 2016/11/24                         *\n");
+	printf("*                   Fred 2017/09/17                         *\n");
 	printf("*************************************************************\n");
 	printf("Usage: %s [OPTIONS...]\n", str);
 	printf("OPTIONS:\n");
 	printf("\t-f        Specify input FRU file\n");
-    printf("\t-o        Specify offset of FRU file, hex\n");
-    printf("\t-s        Size to read from FRU file, hex\n");
-    printf("\t-r        Read FRU file\n");
-    printf("\t-w        Write FRU file\n");
-    printf("\t-d        Hex string data to write, de for 0xde\n");
 	printf("\t-v        Verbose show multiple level message\n");
 	printf("\t            0 -- Total record number\n");
 	printf("\t            1 -- Check all record ID\n");
