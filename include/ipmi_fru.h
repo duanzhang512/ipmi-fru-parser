@@ -237,7 +237,7 @@ static const char * chassis_type_desc[] __attribute__((unused)) = {
 	    "AdvancedTCA", "Blade", "Blade Enclosure"
 };
 
-extern int ipmi_fru_print(char *fruFileName, uint8_t verbose);
+extern int ipmi_fru_print(char *fruFileName, char *iniConfFile, uint8_t verbose);
 
 #endif
 

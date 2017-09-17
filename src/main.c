@@ -94,6 +94,7 @@ int main(int argc, char **argv)
 	char ch = 0, optEnd = -1;
 	// Default SDR file name: nsu12a.bin
 	char *fruFileName = "fru.bin";
+    char *iniConfFile = "example/fru.conf";
     uint8_t verbose = 0;
 
 	opterr = 0;
@@ -125,7 +126,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-    ipmi_fru_print(fruFileName, verbose);
+    ipmi_fru_print(fruFileName, iniConfFile, verbose);
 
 	return 0;
 }

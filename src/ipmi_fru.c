@@ -1,15 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <inttypes.h>
 #include <fcntl.h>
 #include <string.h>
 #include <time.h>
 #include "ipmi_fru.h"
 #include "PDKEEPROM.h"
+#include "iniparser.h"
+#include "parse-ex.h"
 
 #define FRU_MULTIREC_CHUNK_SIZE     (255 + sizeof(struct fru_multirec_header))
 
-#if 1
 
 const char * val2str(uint16_t val, const struct valstr *vs)
 {
@@ -79,9 +81,6 @@ typedef enum IPMI_OEM {
      IPMI_OEM_VITA       = 33196,
      IPMI_OEM_SUPERMICRO_47488 = 47488
 } IPMI_OEM;
-
-
-
 
 const struct valstr ipmi_oem_info[] = {
 
@@ -209,7 +208,6 @@ buf2str(const uint8_t *buf, int len)
 	return buf2str_extended(buf, len, NULL);
 }
 
-#endif
 
 /* read_fru_area  -  fill in frubuf[offset:length] from the FRU[offset:length]
 *
@@ -360,12 +358,18 @@ char * get_fru_area_str(uint8_t * data, uint32_t * offset)
 * @id:  fru id
 * @offset: offset pointer
 */
-static void fru_area_print_chassis(char *fruFileName, struct fru_info * fru, uint32_t offset, uint8_t verbose)
+static void fru_area_print_chassis(char *fruFileName, char *iniConfFile, struct fru_info * fru, uint32_t offset, uint8_t verbose)
 {
 	char * fru_area;
 	uint8_t * fru_data;
 	uint32_t fru_len, i;
 	uint8_t tmp[2];
+
+    INI_HANDLE ini;
+
+    ini = IniLoadFile(iniConfFile);
+    if (ini == NULL)
+            return;
 
 	fru_len = 0;
 
@@ -404,12 +408,17 @@ static void fru_area_print_chassis(char *fruFileName, struct fru_info * fru, uin
  		(sizeof(chassis_type_desc)/sizeof(chassis_type_desc[0])) - 1 ?
  		2 : fru_data[i]]);
 
+    IniSetUInt(ini, "cia", "chassis_type", fru_data[i] >
+ 		(sizeof(chassis_type_desc)/sizeof(chassis_type_desc[0])) - 1 ?
+ 		2 : fru_data[i]);
+
  	i++;
 
 	fru_area = get_fru_area_str(fru_data, &i);
 	if (fru_area != NULL) {
 		if (strlen(fru_area) > 0) {
 			printf(" Chassis Part Number   : %s\n", fru_area);
+            IniSetStr(ini, "cia", "part_number", fru_area);
 		}
 		free(fru_area);
 		fru_area = NULL;
@@ -419,10 +428,13 @@ static void fru_area_print_chassis(char *fruFileName, struct fru_info * fru, uin
 	if (fru_area != NULL) {
 		if (strlen(fru_area) > 0) {
 			printf(" Chassis Serial        : %s\n", fru_area);
+            IniSetStr(ini, "cia", "serial_number", fru_area);
 		}
 		free(fru_area);
 		fru_area = NULL;
 	}
+
+    uint8_t custom_num = 0;
 
 	/* read any extra fields */
 	while ((fru_data[i] != 0xc1) && (i < fru_len))
@@ -432,6 +444,21 @@ static void fru_area_print_chassis(char *fruFileName, struct fru_info * fru, uin
 		if (fru_area != NULL) {
 			if (strlen(fru_area) > 0) {
 				printf(" Chassis Extra         : %s\n", fru_area);
+
+                char * custom_num_str;
+
+                custom_num++;
+                custom_num_str = malloc(20);
+                if (custom_num_str == NULL) {
+                    printf("custom_num_str malloc failure\n");
+                    return;
+                }
+
+                sprintf((char *)custom_num_str, "chassis_custom_%d", custom_num);
+                IniSetStr(ini, "cia", custom_num_str, fru_area);
+
+                free(custom_num_str);
+                custom_num_str = NULL;
 			}
 			free(fru_area);
 			fru_area = NULL;
@@ -446,6 +473,9 @@ static void fru_area_print_chassis(char *fruFileName, struct fru_info * fru, uin
 		free(fru_data);
 		fru_data = NULL;
 	}
+
+    IniSaveFile(ini,iniConfFile);
+    IniCloseFile(ini);
 }
 
 /* fru_area_print_board  -  Print FRU Board Area
@@ -455,7 +485,7 @@ static void fru_area_print_chassis(char *fruFileName, struct fru_info * fru, uin
 * @id:  fru id
 * @offset: offset pointer
 */
-static void fru_area_print_board(char *fruFileName, struct fru_info * fru, uint32_t offset, uint8_t verbose)
+static void fru_area_print_board(char *fruFileName, char *iniConfFile, struct fru_info * fru, uint32_t offset, uint8_t verbose)
 {
 	char * fru_area;
 	uint8_t * fru_data;
@@ -463,6 +493,12 @@ static void fru_area_print_board(char *fruFileName, struct fru_info * fru, uint3
 	uint32_t i;
 	time_t tval;
 	uint8_t tmp[2];
+
+    INI_HANDLE ini;
+
+    ini = IniLoadFile(iniConfFile);
+    if (ini == NULL)
+            return;
 
 	fru_len = 0;
 
@@ -501,12 +537,14 @@ static void fru_area_print_board(char *fruFileName, struct fru_info * fru, uint3
 	tval=tval * 60;
 	tval=tval + secs_from_1970_1996;
 	printf(" Board Mfg Date        : %s", asctime(localtime(&tval)));
+    IniSetUInt(ini, "bia", "mfg_datetime", (fru_data[i+2] << 16) + (fru_data[i+1] << 8) + (fru_data[i]));
 	i += 3;  /* skip mfg. date time */
 
 	fru_area = get_fru_area_str(fru_data, &i);
 	if (fru_area != NULL) {
 		if (strlen(fru_area) > 0) {
 			printf(" Board Mfg             : %s\n", fru_area);
+            IniSetStr(ini, "bia", "manufacturer", fru_area);
 		}
 		free(fru_area);
 		fru_area = NULL;
@@ -516,6 +554,7 @@ static void fru_area_print_board(char *fruFileName, struct fru_info * fru, uint3
 	if (fru_area != NULL) {
 		if (strlen(fru_area) > 0) {
 			printf(" Board Product         : %s\n", fru_area);
+            IniSetStr(ini, "bia", "product_name", fru_area);
 		}
 		free(fru_area);
 		fru_area = NULL;
@@ -525,6 +564,7 @@ static void fru_area_print_board(char *fruFileName, struct fru_info * fru, uint3
 	if (fru_area != NULL) {
 		if (strlen(fru_area) > 0) {
 			printf(" Board Serial          : %s\n", fru_area);
+            IniSetStr(ini, "bia", "serial_number", fru_area);
 		}
 		free(fru_area);
 		fru_area = NULL;
@@ -534,6 +574,7 @@ static void fru_area_print_board(char *fruFileName, struct fru_info * fru, uint3
 	if (fru_area != NULL) {
 		if (strlen(fru_area) > 0) {
 			printf(" Board Part Number     : %s\n", fru_area);
+            IniSetStr(ini, "bia", "part_number", fru_area);
 		}
 		free(fru_area);
 		fru_area = NULL;
@@ -543,10 +584,13 @@ static void fru_area_print_board(char *fruFileName, struct fru_info * fru, uint3
 	if (fru_area != NULL) {
 		if (strlen(fru_area) > 0) {
 			printf(" Board FRU ID          : %s\n", fru_area);
+            IniSetStr(ini, "bia", "fru_file_id", fru_area);
 		}
 		free(fru_area);
 		fru_area = NULL;
 	}
+
+    uint8_t custom_num = 0;
 
 	/* read any extra fields */
 	while ((fru_data[i] != 0xc1) && (i < fru_len))
@@ -556,6 +600,21 @@ static void fru_area_print_board(char *fruFileName, struct fru_info * fru, uint3
 		if (fru_area != NULL) {
 			if (strlen(fru_area) > 0) {
 				printf(" Board Extra           : %s\n", fru_area);
+
+                char * custom_num_str;
+
+                custom_num++;
+                custom_num_str = malloc(20);
+                if (custom_num_str == NULL) {
+                    printf("custom_num_str malloc failure\n");
+                    return;
+                }
+
+                sprintf((char *)custom_num_str, "board_custom_%d", custom_num);
+                IniSetStr(ini, "bia", custom_num_str, fru_area);
+
+                free(custom_num_str);
+                custom_num_str = NULL;
 			}
 			free(fru_area);
 			fru_area = NULL;
@@ -568,6 +627,9 @@ static void fru_area_print_board(char *fruFileName, struct fru_info * fru, uint3
 		free(fru_data);
 		fru_data = NULL;
 	}
+
+    IniSaveFile(ini,iniConfFile);
+    IniCloseFile(ini);
 }
 
 /* fru_area_print_product  -  Print FRU Product Area
@@ -578,12 +640,18 @@ static void fru_area_print_board(char *fruFileName, struct fru_info * fru, uint3
 * @offset: offset pointer
 */
 static void
-fru_area_print_product(char *fruFileName, struct fru_info * fru, uint32_t offset, uint8_t verbose)
+fru_area_print_product(char *fruFileName, char *iniConfFile, struct fru_info * fru, uint32_t offset, uint8_t verbose)
 {
 	char * fru_area;
 	uint8_t * fru_data;
 	uint32_t fru_len, i;
 	uint8_t tmp[2];
+
+    INI_HANDLE ini;
+
+    ini = IniLoadFile(iniConfFile);
+    if (ini == NULL)
+            return;
 
 	fru_len = 0;
 
@@ -623,6 +691,7 @@ fru_area_print_product(char *fruFileName, struct fru_info * fru, uint32_t offset
 	if (fru_area != NULL) {
 		if (strlen(fru_area) > 0) {
 			printf(" Product Manufacturer  : %s\n", fru_area);
+            IniSetStr(ini, "pia", "manufacturer", fru_area);
 		}
 		free(fru_area);
 		fru_area = NULL;
@@ -632,6 +701,7 @@ fru_area_print_product(char *fruFileName, struct fru_info * fru, uint32_t offset
 	if (fru_area != NULL) {
 		if (strlen(fru_area) > 0) {
 			printf(" Product Name          : %s\n", fru_area);
+            IniSetStr(ini, "pia", "product_name", fru_area);
 		}
 		free(fru_area);
 		fru_area = NULL;
@@ -641,6 +711,7 @@ fru_area_print_product(char *fruFileName, struct fru_info * fru, uint32_t offset
 	if (fru_area != NULL) {
 		if (strlen(fru_area) > 0) {
 			printf(" Product Part Number   : %s\n", fru_area);
+            IniSetStr(ini, "pia", "part_number", fru_area);
 		}
 		free(fru_area);
 		fru_area = NULL;
@@ -650,6 +721,7 @@ fru_area_print_product(char *fruFileName, struct fru_info * fru, uint32_t offset
 	if (fru_area != NULL) {
 		if (strlen(fru_area) > 0) {
 			printf(" Product Version       : %s\n", fru_area);
+            IniSetStr(ini, "pia", "version", fru_area);
 		}
 		free(fru_area);
 		fru_area = NULL;
@@ -659,6 +731,7 @@ fru_area_print_product(char *fruFileName, struct fru_info * fru, uint32_t offset
 	if (fru_area != NULL) {
 		if (strlen(fru_area) > 0) {
 			printf(" Product Serial        : %s\n", fru_area);
+            IniSetStr(ini, "pia", "serial_number", fru_area);
 		}
 		free(fru_area);
 		fru_area = NULL;
@@ -668,6 +741,7 @@ fru_area_print_product(char *fruFileName, struct fru_info * fru, uint32_t offset
 	if (fru_area != NULL) {
 		if (strlen(fru_area) > 0) {
 			printf(" Product Asset Tag     : %s\n", fru_area);
+            IniSetStr(ini, "pia", "asset_tag", fru_area);
 		}
 		free(fru_area);
 		fru_area = NULL;
@@ -677,10 +751,13 @@ fru_area_print_product(char *fruFileName, struct fru_info * fru, uint32_t offset
 	if (fru_area != NULL) {
 		if (strlen(fru_area) > 0) {
 			printf(" Product FRU ID        : %s\n", fru_area);
+            IniSetStr(ini, "pia", "fru_file_id", fru_area);
 		}
 		free(fru_area);
 		fru_area = NULL;
 	}
+
+    uint8_t custom_num = 0;
 
 	/* read any extra fields */
 	while ((fru_data[i] != 0xc1) && (i < fru_len))
@@ -690,6 +767,21 @@ fru_area_print_product(char *fruFileName, struct fru_info * fru, uint32_t offset
 		if (fru_area != NULL) {
 			if (strlen(fru_area) > 0) {
 				printf(" Product Extra         : %s\n", fru_area);
+
+                char * custom_num_str;
+
+                custom_num++;
+                custom_num_str = malloc(20);
+                if (custom_num_str == NULL) {
+                    printf("custom_num_str malloc failure\n");
+                    return;
+                }
+
+                sprintf((char *)custom_num_str, "product_custom_%d", custom_num);
+                IniSetStr(ini, "pia", custom_num_str, fru_area);
+
+                free(custom_num_str);
+                custom_num_str = NULL;
 			}
 			free(fru_area);
 			fru_area = NULL;
@@ -702,9 +794,12 @@ fru_area_print_product(char *fruFileName, struct fru_info * fru, uint32_t offset
 		free(fru_data);
 		fru_data = NULL;
 	}
+
+    IniSaveFile(ini,iniConfFile);
+    IniCloseFile(ini);
 }
 
-int ipmi_fru_print(char *fruFileName, uint8_t verbose)
+int ipmi_fru_print(char *fruFileName, char *iniConfFile, uint8_t verbose)
 {
 	struct fru_info fru;
 	struct fru_header header;
@@ -758,15 +853,15 @@ int ipmi_fru_print(char *fruFileName, uint8_t verbose)
 	*/
 	/* chassis area */
 	if ((header.offset.chassis*8) >= sizeof(struct fru_header))
-		fru_area_print_chassis(fruFileName, &fru, header.offset.chassis*8, verbose);
+		fru_area_print_chassis(fruFileName, iniConfFile, &fru, header.offset.chassis*8, verbose);
 
 	/* board area */
 	if ((header.offset.board*8) >= sizeof(struct fru_header))
-		fru_area_print_board(fruFileName, &fru, header.offset.board*8, verbose);
+		fru_area_print_board(fruFileName, iniConfFile, &fru, header.offset.board*8, verbose);
 
 	/* product area */
 	if ((header.offset.product*8) >= sizeof(struct fru_header))
-		fru_area_print_product(fruFileName, &fru, header.offset.product*8, verbose);
+		fru_area_print_product(fruFileName, iniConfFile, &fru, header.offset.product*8, verbose);
 
 	return 0;
 }
