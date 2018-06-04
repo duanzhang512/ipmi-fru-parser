@@ -8,18 +8,19 @@
 #include "PDKEEPROM.h"
 #include "ipmi_fru.h"
 
-#define TOOL_VERSION		"0.1"
+#define TOOL_VERSION		"0.1.1"
 
 // Show Help Information Of This Tool
 void ShowHelp(char *str)
 {
 	printf("*************************************************************\n");
-	fprintf(stdout, "*                SDR PARSER TOOL V%s                       *\n", TOOL_VERSION);
-	printf("*                   Fred 2017/09/17                         *\n");
+	fprintf(stdout, "*                SDR PARSER TOOL V%s                     *\n", TOOL_VERSION);
+	printf("*                   Fred 2018/06/05                         *\n");
 	printf("*************************************************************\n");
 	printf("Usage: %s [OPTIONS...]\n", str);
 	printf("OPTIONS:\n");
 	printf("\t-f        Specify input FRU file\n");
+	printf("\t-o        Specify output configure\n");
 	printf("\t-v        Verbose show multiple level message\n");
 	printf("\t            0 -- Total record number\n");
 	printf("\t            1 -- Check all record ID\n");
@@ -82,7 +83,7 @@ int PrintDataToChar(uint8_t dat)
     return 0;
 }
 
-static const char *optString = "f:v:V";
+static const char *optString = "f:o:v:V";
 
 int main(int argc, char **argv)
 {
@@ -106,6 +107,9 @@ int main(int argc, char **argv)
 		{
 			case 'f':
 				fruFileName = optarg;
+			break;
+			case 'o':
+				iniConfFile = optarg;
 			break;
 			case 'v':
 				verbose = strtol(optarg, NULL, 10);

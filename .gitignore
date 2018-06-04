@@ -1,5 +1,4 @@
 si
 *.o
-bin/parser
-tool/fru.bin
+bin/*
 *.d
