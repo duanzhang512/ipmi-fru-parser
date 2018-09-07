@@ -14,7 +14,7 @@
 void ShowHelp(char *str)
 {
 	printf("*************************************************************\n");
-	fprintf(stdout, "*                SDR PARSER TOOL V%s                     *\n", TOOL_VERSION);
+	fprintf(stdout, "*                FRU BIN PARSER TOOL V%s                     *\n", TOOL_VERSION);
 	printf("*                   Fred 2018/06/05                         *\n");
 	printf("*************************************************************\n");
 	printf("Usage: %s [OPTIONS...]\n", str);
