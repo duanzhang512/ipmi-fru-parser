@@ -443,7 +443,7 @@ static void fru_area_print_chassis(char *fruFileName, char *iniConfFile, struct 
 		fru_area = get_fru_area_str(fru_data, &i);
 		if (fru_area != NULL) {
 			if (strlen(fru_area) > 0) {
-				printf(" Chassis Extra         : %s\n", fru_area);
+				printf(" Chassis Extra_%d       : %s\n", (custom_num + 1), fru_area);
 
                 char * custom_num_str;
 
@@ -599,7 +599,7 @@ static void fru_area_print_board(char *fruFileName, char *iniConfFile, struct fr
 		fru_area = get_fru_area_str(fru_data, &i);
 		if (fru_area != NULL) {
 			if (strlen(fru_area) > 0) {
-				printf(" Board Extra           : %s\n", fru_area);
+				printf(" Board Extra_%d         : %s\n", (custom_num + 1), fru_area);
 
                 char * custom_num_str;
 
@@ -766,7 +766,7 @@ fru_area_print_product(char *fruFileName, char *iniConfFile, struct fru_info * f
 		fru_area = get_fru_area_str(fru_data, &i);
 		if (fru_area != NULL) {
 			if (strlen(fru_area) > 0) {
-				printf(" Product Extra         : %s\n", fru_area);
+				printf(" Product Extra_%d       : %s\n", (custom_num + 1), fru_area);
 
                 char * custom_num_str;
 
