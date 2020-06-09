@@ -8,14 +8,13 @@
 #include "PDKEEPROM.h"
 #include "ipmi_fru.h"
 
-#define TOOL_VERSION		"0.1.1"
+#define TOOL_VERSION		"0.1.2"
 
 // Show Help Information Of This Tool
 void ShowHelp(char *str)
 {
 	printf("*************************************************************\n");
-	fprintf(stdout, "*                FRU BIN PARSER TOOL V%s                     *\n", TOOL_VERSION);
-	printf("*                   Fred 2018/06/05                         *\n");
+	fprintf(stdout, "*                FRU BIN PARSER TOOL V%s                 *\n", TOOL_VERSION);
 	printf("*************************************************************\n");
 	printf("Usage: %s [OPTIONS...]\n", str);
 	printf("OPTIONS:\n");
