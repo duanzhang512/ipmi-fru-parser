@@ -474,8 +474,11 @@ static void fru_area_print_chassis(char *fruFileName, char *iniConfFile, struct 
 		fru_data = NULL;
 	}
 
-    IniSaveFile(ini,iniConfFile);
-    IniCloseFile(ini);
+    if (iniConfFile != NULL)
+    {
+        IniSaveFile(ini,iniConfFile);
+        IniCloseFile(ini);
+    }
 }
 
 /* fru_area_print_board  -  Print FRU Board Area
@@ -496,9 +499,12 @@ static void fru_area_print_board(char *fruFileName, char *iniConfFile, struct fr
 
     INI_HANDLE ini;
 
-    ini = IniLoadFile(iniConfFile);
-    if (ini == NULL)
+    if (iniConfFile != NULL)
+    {
+        ini = IniLoadFile(iniConfFile);
+        if (ini == NULL)
             return;
+    }
 
 	fru_len = 0;
 
@@ -628,8 +634,11 @@ static void fru_area_print_board(char *fruFileName, char *iniConfFile, struct fr
 		fru_data = NULL;
 	}
 
-    IniSaveFile(ini,iniConfFile);
-    IniCloseFile(ini);
+    if (iniConfFile != NULL)
+    {
+        IniSaveFile(ini,iniConfFile);
+        IniCloseFile(ini);
+    }
 }
 
 /* fru_area_print_product  -  Print FRU Product Area
@@ -649,9 +658,12 @@ fru_area_print_product(char *fruFileName, char *iniConfFile, struct fru_info * f
 
     INI_HANDLE ini;
 
-    ini = IniLoadFile(iniConfFile);
-    if (ini == NULL)
+    if (iniConfFile != NULL)
+    {
+        ini = IniLoadFile(iniConfFile);
+        if (ini == NULL)
             return;
+    }
 
 	fru_len = 0;
 
@@ -795,9 +807,13 @@ fru_area_print_product(char *fruFileName, char *iniConfFile, struct fru_info * f
 		fru_data = NULL;
 	}
 
-    IniSaveFile(ini,iniConfFile);
-    IniCloseFile(ini);
+    if (iniConfFile != NULL)
+    {
+        IniSaveFile(ini,iniConfFile);
+        IniCloseFile(ini);
+    }
 }
+
 
 int ipmi_fru_print(char *fruFileName, char *iniConfFile, uint8_t verbose)
 {
@@ -815,10 +831,13 @@ int ipmi_fru_print(char *fruFileName, char *iniConfFile, uint8_t verbose)
 	fru.access = 0; // Device is accessed by bytes
 
     if(verbose > 0)
+    {
     	printf("fru.size = %d bytes (accessed by %s)\n",
 	    	fru.size, fru.access ? "words" : "bytes");
+    }
 
-	if (fru.size < 1) {
+	if (fru.size < 1) 
+    {
 		printf(" Invalid FRU size %d\n", fru.size);
 		return -1;
 	}

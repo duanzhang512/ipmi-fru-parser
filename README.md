@@ -9,6 +9,16 @@ sh build.sh
 
 ## Usage 
 
+To parse the FRU and output the ini config file:
+
 ```
 ./bin/parser -f example/fru.bin -o example/fru.conf
 ```
+
+To parse the FRU directly:
+
+```
+./bin/parser -f example/fru.bin
+```
+
+
